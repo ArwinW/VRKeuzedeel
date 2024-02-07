@@ -37,6 +37,8 @@ public class SpawnCubeBehaviorActivatingProcess : StageProcess<ItemSpawner>
         {
             // Instantiate the cube prefab at the spawner's position
             GameObject newCube = GameObject.Instantiate(cubePrefab, spawnerPosition, Quaternion.identity);
+
+            newCube.tag = "cube";
         }
         else
         {
