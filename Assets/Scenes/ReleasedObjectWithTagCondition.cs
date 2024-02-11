@@ -15,25 +15,21 @@ using VRBuilder.Core.Settings;
 using VRBuilder.Core.Utils;
 using VRBuilder.Core.Validation;
 
-
 namespace VRBuilder.BasicInteraction.Conditions
 {
     /// <summary>
-    /// Condition which is completed when the object with a specific tag becomes ungrabbed.
+    /// Condition which is completed when `GrabbableProperty` with the given tag becomes ungrabbed.
     /// </summary>
     [DataContract(IsReference = true)]
+    [HelpLink("https://www.mindport.co/vr-builder/manual/default-conditions/release-object")]
     public class ReleasedObjectWithTagCondition : Condition<ReleasedObjectWithTagCondition.EntityData>
     {
         [DisplayName("Release Object with Tag")]
-        public class EntityData : IConditionData, INamedData
+        public class EntityData : IConditionData
         {
             [DataMember]
             [DisplayName("Tag")]
             public SceneObjectTag<IGrabbableProperty> Tag { get; set; }
-
-            [DataMember]
-            [DisplayName("Cube Count")]
-            public int CubeCount { get; set; } // New field to store the count of cubes associated with the condition
 
             public bool IsCompleted { get; set; }
 
@@ -55,41 +51,26 @@ namespace VRBuilder.BasicInteraction.Conditions
 
         private class ActiveProcess : BaseActiveProcessOverCompletable<EntityData>
         {
+            private IGrabbableProperty currentHeldObject;
+
             public ActiveProcess(EntityData data) : base(data)
             {
             }
 
+            public override void Start()
+            {
+                base.Start();
+                currentHeldObject = null;
+            }
+
+            public void SetCurrentHeldObject(IGrabbableProperty heldObject)
+            {
+                currentHeldObject = heldObject;
+            }
+
             protected override bool CheckIfCompleted()
             {
-                // Check if any of the cubes associated with the condition are being released
-                var releasedObjects = RuntimeConfigurator.Configuration.SceneObjectRegistry.GetByTag(Data.Tag.Guid)
-                    .Where(sceneObject => sceneObject.UniqueName == $"Cube_{Data.CubeCount}")
-                    .ToList();
-
-                // Check if any of the cubes are grabbed
-                foreach (var sceneObject in releasedObjects)
-                {
-                    var gameObject = sceneObject.GameObject;
-                    var grabbableProperty = gameObject.GetComponent<IGrabbableProperty>();
-                    if (grabbableProperty != null && grabbableProperty.IsGrabbed)
-                    {
-                        return false; // If any cube is grabbed, the condition is not completed
-                    }
-                }
-
-                return true; // If none of the cubes are grabbed, the condition is completed
-            }
-        }
-
-        private class EntityAutocompleter : Autocompleter<EntityData>
-        {
-            public EntityAutocompleter(EntityData data) : base(data)
-            {
-            }
-
-            public override void Complete()
-            {
-                // Nothing needs to be done for autocompletion in this case
+                return currentHeldObject == null || !currentHeldObject.IsGrabbed;
             }
         }
 
@@ -106,17 +87,6 @@ namespace VRBuilder.BasicInteraction.Conditions
         public override IStageProcess GetActiveProcess()
         {
             return new ActiveProcess(Data);
-        }
-
-        protected override IAutocompleter GetAutocompleter()
-        {
-            return new EntityAutocompleter(Data);
-        }
-
-        // Method to increment the cube count associated with the condition
-        public void IncrementCubeCount()
-        {
-            Data.CubeCount++;
         }
     }
 }

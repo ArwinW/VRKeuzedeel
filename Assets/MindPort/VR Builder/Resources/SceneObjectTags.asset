@@ -15,3 +15,5 @@ MonoBehaviour:
   tags:
   - label: cube
     guidString: 7d9d141d-7a68-4e77-b2a4-fae73a81c2d8
+  - label: other cubes
+    guidString: 034ad371-b92c-443b-975c-23c7605fb045
